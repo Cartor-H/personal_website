@@ -226,11 +226,13 @@
     const SPEED = [70, 70, 70, 90, 600, 70, 1];      // AP speed in dots/s, per point type
     const BASE = [0.1, 0, 0.08, -0.04, -0.02, 0.18, 0];
     const REFR = 0.9, BLOCK = -0.35;
+    const BAP_LEN = 22, BAP_FADE = 9; // back-propagating spike: how far into dendrites (dots), fade length
     const AP_THR = 0.6, AP_REF = 0.8, AHP = -0.4, VM_TAU = 0.8;
     const LAMBDA = 35, PSP_SPEED = 90, PSP_MIN = 0.05;
     const W0 = 0.95, WMAX = 1.8, LTP_STEP = 0.15, LTP_WIN = 0.6;
     const STIM_R = 26, STIM_SPEED = 110;
-    const GROW_R = 70, GROW_MAX = 18, SHRINK = 10;
+    const GROW_MAX = 18, SHRINK = 10;
+    const FS = 4, FLD_R = 7, FLD_TAU = 0.4; // field grid size (dots), sampling radius (field cells), decay
     const MAXA = 10; // max neighbours per point
     // Overlapping waves each get their own visited marks, chosen by id
     const PS = 32, RS = 8; // slots for PSPs and for stimulus rings
@@ -276,7 +278,8 @@
     let cVis, cStimT, cStimAmp;
     let nSyn = 0, sPre, sPost, sW, sLast, sLvl, inSyn;
     let nV, nAP, nHill, nDend, active;
-    let tips = [], attractors = [], tipLimit = 0;
+    let tips = [], deadTips = [], tipLimit = 0, gAnc;
+    let FX, FY, fld, fldOwn, fldLive = -1e9;
     const stimSigns = [0], stimAmp = [0];
     let stimCount = 0;
     function newStim(sign, amp) {
@@ -336,7 +339,10 @@
       if (xi < 0 || yi < 0 || xi >= GX || yi >= GY) return -1;
       const key = layer * N + yi * GX + xi;
       let k = n.map.get(key);
-      if (k !== undefined) return k;
+      if (k !== undefined) {
+        if (n.type[k] === MYEL && type !== MYEL) n.type[k] = type; // conducting core wins over sheath
+        return k;
+      }
       k = n.key.length;
       n.map.set(key, k);
       n.key.push(key);
@@ -352,12 +358,18 @@
           if (dx * dx + dy * dy <= r * r + 0.3) add(n, x + dx, y + dy, type, layer);
     }
 
+    const onGrid = (x, y) => x >= -0.5 && y >= -0.5 && x < GX - 0.5 && y < GY - 0.5;
+
     function growDendrite(n, x, y, a, w, len, depth) {
       const thin = []; // one-dot-wide run at the end of the branch, which can later retract
+      let was = onGrid(x, y);
       for (let s = 0; s < len; s++) {
         a += (Math.random() - 0.5) * 0.3;
         x += Math.cos(a);
         y += Math.sin(a);
+        const on = onGrid(x, y);
+        if (was && !on) break; // left the screen: stop, or it could come back as a floating piece
+        was = on;
         const r = w * (1 - 0.65 * s / len) / 2;
         disc(n, x, y, r, DEND, 0);
         if (r < 0.75) thin.push(add(n, x, y, DEND, 0));
@@ -365,6 +377,7 @@
           thin.length = 0;
           if (Math.random() < 0.07) { // spine
             const side = Math.random() < 0.5 ? 1 : -1, o = Math.floor(r) + 1;
+            add(n, x - Math.sin(a) * (o - 1) * side, y + Math.cos(a) * (o - 1) * side, DEND, 0); // neck
             add(n, x - Math.sin(a) * o * side, y + Math.cos(a) * o * side, DEND, 0);
           }
         }
@@ -424,6 +437,7 @@
       // Trunk: meanders toward the target neuron
       let dx = Math.cos(a), dy = Math.sin(a);
       const path = [];
+      let was = onGrid(x, y), clipped = false;
       for (let s = 0; s < 800; s++) {
         const tx = T.cx - x, ty = T.cy - y, d = Math.hypot(tx, ty);
         if (d < 22) break;
@@ -432,6 +446,9 @@
         const m = Math.hypot(dx, dy);
         dx /= m; dy /= m;
         x += dx; y += dy;
+        const on = onGrid(x, y);
+        if (was && !on) { clipped = true; break; }
+        was = on;
         path.push([x, y]);
       }
       if (!path.length) return;
@@ -453,6 +470,8 @@
             if (n.key.length > before) n.link[k] = core[s];
           }
       });
+
+      if (clipped) return;
 
       // Axon terminals: branches ending in boutons beside the target's dendrites
       const [ex, ey] = path[L0 - 1];
@@ -483,7 +502,7 @@
           const m = Math.hypot(ux, uy);
           ux /= m; uy /= m;
           bx += ux; by += uy;
-          add(n, bx, by, AXON, 1);
+          if (add(n, bx, by, AXON, 1) < 0) break;
         }
         const b = add(n, bx, by, TERM, 1);
         if (b < 0) continue;
@@ -544,7 +563,7 @@
       free = [];
       gCell = new Int32Array(Gc); gType = new Uint8Array(Gc); gN = new Uint16Array(Gc);
       gLink = new Int32Array(Gc).fill(-1); gSyn = new Int32Array(Gc).fill(-1); gTint = new Int32Array(Gc).fill(-1);
-      gRing = new Uint8Array(Gc); gTip = new Int32Array(Gc).fill(-1); isSoma = new Uint8Array(Gc);
+      gRing = new Uint8Array(Gc); gTip = new Int32Array(Gc).fill(-1); isSoma = new Uint8Array(Gc); gAnc = new Uint8Array(Gc);
       aCnt = new Uint8Array(Gc); aL = new Int32Array(Gc * MAXA); aD = new Float32Array(Gc * MAXA);
       dS = new Float32Array(Gc).fill(60);
       base = new Float32Array(Gc); p = new Float32Array(Gc); pn = new Float32Array(Gc);
@@ -609,7 +628,7 @@
         inSyn[s.postN].push(i);
       });
 
-      tips = [];
+      tips = []; deadTips = [];
       const keep = new Set(syn.map(s => s.post));
       neurons.forEach((n, ni) => n.tips.forEach(t => {
         let st = [...new Set(t.path.filter(k => k >= 0).map(k => n.off + k))];
@@ -619,8 +638,8 @@
         if (st.length < 2) return;
         const ti = tips.length, c = gCell[st[st.length - 1]];
         st.forEach(g => { gTip[g] = ti; });
-        tips.push({ n: ni, x: c % GX, y: (c / GX) | 0, a: t.a, stack: st, anchor: -1,
-                    floor: Math.max(1, st.length - SHRINK), max: st.length + GROW_MAX, last: 0 });
+        tips.push({ n: ni, x: c % GX, y: (c / GX) | 0, a: t.a, a0: t.a, stack: st, anchor: -1,
+                    floor: Math.max(1, st.length - SHRINK), max: st.length + GROW_MAX, last: 0, sprout: 0 });
       }));
 
       nV = new Float32Array(neurons.length);
@@ -649,8 +668,9 @@
         }
       own0 = new Int32Array(N).fill(-1); own1 = new Int32Array(N).fill(-1);
       cVis = new Int32Array(N * RS); cStimT = new Float64Array(N).fill(-1e9); cStimAmp = new Float32Array(N);
+      FX = Math.ceil(GX / FS); FY = Math.ceil(GY / FS);
+      fld = new Float32Array(FX * FY); fldOwn = new Int16Array(FX * FY).fill(-1);
       hN = 0;
-      attractors = [];
       generate();
     }
 
@@ -658,20 +678,27 @@
 
     let simT = 0, apCount = 0;
 
+    // Extracellular field on a coarse grid. Positive = depolarising.
+    // fldOwn remembers which neuron's axon last made it positive.
+    function addField(c, v, n) {
+      const f = (((c / GX) | 0) >> 2) * FX + ((c % GX) >> 2);
+      fld[f] += v;
+      if (v > 0) fldOwn[f] = n;
+      fldLive = simT;
+    }
+
     // Action potential front: all-or-none, blocked by refractory or strongly
     // hyperpolarised membrane
     function fire(t, g) {
       if (t - tFire[g] < REFR || p[g] < BLOCK) return;
       tFire[g] = t;
       const ty = gType[g];
-      if ((ty === AXON || ty === AXM || ty === TERM) && (g & 7) === 0 && attractors.length < 600) {
-        const c = gCell[g];
-        attractors.push({ x: c % GX, y: (c / GX) | 0, t, n: gN[g], r: 30, w: 0.35 });
-      }
+      if (ty === AXON || ty === AXM || ty === TERM) addField(gCell[g], 0.025, gN[g]); // action current
       if (gSyn[g] >= 0) push(t + 0.05, gSyn[g], K_SYN, 0, 0);
       for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
         const h = aL[k];
         if (t - tFire[h] < REFR) continue;
+        if (gType[h] === DEND && dS[h] > BAP_LEN) continue; // back-propagation dies out in the dendrite
         const tt = t + aD[k] / SPEED[gType[h]];
         if (tSched[h] > t && tSched[h] <= tt) continue;
         tSched[h] = tt;
@@ -688,7 +715,7 @@
       gPsp[g * PS + slot] = id;
       const sign = stimSigns[id];
       p[g] += sign * Math.min(amp, 1.2) * 0.55;
-      if (gTip[g] >= 0) tips[gTip[g]].last = t;
+      if (sign > 0 && gTip[g] >= 0) tips[gTip[g]].last = t;
       if (isSoma[g]) nV[gN[g]] += sign * amp;
       for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
         const h = aL[k];
@@ -756,6 +783,7 @@
       if (cVis[c * RS + slot] === id) return;
       const sign = stimSigns[id], amp = 1 - d / STIM_R;
       cVis[c * RS + slot] = id; cStimT[c] = t; cStimAmp[c] = sign * amp;
+      addField(c, sign * amp * 0.05, -1);
       const x = c % GX, y = (c / GX) | 0;
       for (let k = 0; k < 8; k++) {
         const nx = x + DX[k], ny = y + DY[k];
@@ -798,16 +826,25 @@
 
     // ----- Dendrite growth -----
 
-    // A tip is a stack of points it may add or remove. Tips that branched off
+    // A tip is a stack of points it may add or remove. Branches that sprout
     // during growth start empty from an anchor point and can retract fully.
     const tipEnd = t => t.stack.length ? t.stack[t.stack.length - 1] : t.anchor;
+    const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+    const clamp = (v, m) => v < -m ? -m : v > m ? m : v;
 
-    function growTip(ti, ax, ay) {
+    function newTip(n, g, a) {
+      const ti = deadTips.length ? deadTips.pop() : tips.length < tipLimit ? tips.length : -1;
+      if (ti < 0) return;
+      const c = gCell[g];
+      tips[ti] = { n, x: c % GX, y: (c / GX) | 0, a, a0: a, stack: [], anchor: g,
+                   floor: 0, max: GROW_MAX >> 1, last: simT, sprout: simT };
+      gAnc[g]++;
+    }
+
+    // Add one point in the tip's current heading
+    function growTip(ti) {
       const t = tips[ti], n = neurons[t.n], top = tipEnd(t);
       if (aCnt[top] >= MAXA) return;
-      let diff = Math.atan2(ay - t.y, ax - t.x) - t.a;
-      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      t.a += Math.max(-0.3, Math.min(0.3, diff)) + (Math.random() - 0.5) * 0.2;
       const tc = gCell[top];
       let x = t.x, y = t.y, c = tc;
       for (let s = 0; s < 3 && c === tc; s++) {
@@ -821,7 +858,7 @@
       const g = free.length ? free.pop() : Gtop < Gc ? Gtop++ : -1;
       if (g < 0) return;
       gCell[g] = c; gType[g] = DEND; gN[g] = t.n; gLink[g] = -1; gSyn[g] = -1; gTint[g] = -1; gRing[g] = 0;
-      isSoma[g] = 0; aCnt[g] = 0; p[g] = 0; pn[g] = 0; tFire[g] = -1e9; tSched[g] = -1e9;
+      isSoma[g] = 0; aCnt[g] = 0; gAnc[g] = 0; p[g] = 0; pn[g] = 0; tFire[g] = -1e9; tSched[g] = -1e9;
       gTouch.fill(0, g * RS, g * RS + RS); gPsp.fill(0, g * PS, g * PS + PS);
       base[g] = BASE[DEND] + (Math.random() - 0.5) * 0.1;
       link(g, top, 1);
@@ -833,19 +870,48 @@
       t.stack.push(g);
       t.x = x; t.y = y;
 
-      // Occasionally fork: the new branch is its own tip, anchored here
-      if (t.stack.length > 2 && tips.length < tipLimit && Math.random() < 0.08) {
+      // Occasionally fork into two
+      if (t.stack.length > 2 && Math.random() < 0.08) {
         const side = Math.random() < 0.5 ? 1 : -1;
-        tips.push({ n: t.n, x, y, a: t.a + side * (0.5 + Math.random() * 0.5), stack: [], anchor: g,
-                    floor: 0, max: GROW_MAX >> 1, last: simT });
+        newTip(t.n, g, t.a + side * (0.5 + Math.random() * 0.5));
         t.a -= side * 0.2;
       }
     }
 
+    // A tip only bends a little. A source far off its heading makes a new
+    // branch sprout from the shaft instead.
+    function steer(ti, target) {
+      const t = tips[ti];
+      if (Math.abs(wrap(target - t.a0)) > 1.1) {
+        if (simT - t.sprout < 3) return;
+        t.sprout = simT;
+        const ux = Math.cos(target), uy = Math.sin(target);
+        const cand = t.stack.length > 3 ? t.stack.slice(0, -2) : t.anchor >= 0 ? [t.anchor] : t.stack;
+        let best = -1, bs = -Infinity;
+        for (const g of cand) {
+          if (aCnt[g] >= MAXA - 1) continue;
+          const c = gCell[g], s = (c % GX) * ux + ((c / GX) | 0) * uy; // furthest toward the source
+          if (s > bs) { bs = s; best = g; }
+        }
+        if (best >= 0) newTip(t.n, best, target);
+        return;
+      }
+      t.a += clamp(wrap(target - t.a), 0.15) + (Math.random() - 0.5) * 0.15;
+      t.a = t.a0 + clamp(wrap(t.a - t.a0), 0.6);
+      growTip(ti);
+    }
+
     function retractTip(ti) {
       const t = tips[ti];
+      if (!t.stack.length && !t.floor && t.anchor >= 0) { // an empty sprouted branch is gone
+        gAnc[t.anchor]--;
+        t.anchor = -1;
+        deadTips.push(ti);
+        return;
+      }
       if (t.stack.length <= t.floor) return;
       const g = t.stack[t.stack.length - 1];
+      if (gAnc[g]) return; // another branch grows from here
       // Only retract a free end: every neighbour must belong to this tip (or be its anchor)
       for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
         const h = aL[k];
@@ -870,24 +936,37 @@
       t.x = c % GX; t.y = (c / GX) | 0;
     }
 
-    // Attractors are recent extracellular clicks and recently firing axon
-    // segments of other neurons. Each pulls tips within its range for a moment.
+    // Growth follows the extracellular field around each tip. Stimuli and
+    // other neurons' firing axons make it positive, inhibitory stimuli make it
+    // negative. A tip grows up the positive gradient while the net field is
+    // depolarising, and retracts after a long time without depolarisation.
     function growth(dt) {
-      attractors = attractors.filter(a => simT - a.t < 1.5);
+      const dec = Math.exp(-dt / FLD_TAU);
+      for (let f = 0; f < fld.length; f++) fld[f] *= dec;
+      const live = simT - fldLive < 2, R = FLD_R;
       for (let ti = 0; ti < tips.length; ti++) {
         const t = tips[ti];
         if (!t.stack.length && t.anchor < 0) continue;
-        let best = null, bs = 0;
-        for (const a of attractors) {
-          if (a.n === t.n) continue;
-          const d = Math.hypot(a.x - t.x, a.y - t.y);
-          if (d >= a.r || d < 3) continue;
-          const score = a.w * (1 - d / a.r);
-          if (score > bs) { bs = score; best = a; }
+        let D = 0, vx = 0, vy = 0;
+        if (live) {
+          const fx = Math.floor(t.x / FS), fy = Math.floor(t.y / FS);
+          for (let oy = -R; oy <= R; oy++) {
+            const y = fy + oy;
+            if (y < 0 || y >= FY) continue;
+            for (let ox = -R; ox <= R; ox++) {
+              const x = fx + ox, d2 = ox * ox + oy * oy;
+              if (x < 0 || x >= FX || d2 > R * R) continue;
+              const k = y * FX + x, f = fld[k];
+              if (f === 0 || (f > 0 && fldOwn[k] === t.n)) continue;
+              const d = Math.sqrt(d2), w = 1 - d / (R + 1);
+              D += f * w;
+              if (d2) { vx += f * w * ox / d; vy += f * w * oy / d; }
+            }
+          }
         }
-        if (best) {
+        if (D > 0.05) {
           t.last = simT;
-          if (t.stack.length < t.max && Math.random() < dt * 6 * bs) growTip(ti, best.x, best.y);
+          if (t.stack.length < t.max && Math.random() < dt * 6 * Math.min(1, D)) steer(ti, Math.atan2(vy, vx));
         } else if (simT - t.last > 12 && Math.random() < dt * 0.25) {
           retractTip(ti);
         }
@@ -921,7 +1000,7 @@
           let v = base[g] + p[g];
           if (ty === SOMA || ty === HILL) v += nV[gN[g]] * 0.7;
           const d = t - tFire[g];
-          if (d >= 0 && d < 3) v += spike(d) * (ty === DEND ? 0.75 : 1);
+          if (d >= 0 && d < 3) v += spike(d) * (ty === DEND ? 0.8 * Math.exp(-dS[g] / BAP_FADE) : 1);
           const s = gTint[g];
           const i = ((v + 1.2) * 91.07) | 0;
           col = (s >= 0 ? TINT[sLvl[s]] : NEU)[i < 0 ? 0 : i > 255 ? 255 : i];
@@ -952,7 +1031,6 @@
         else push(simT, g, K_PSP, 0, newStim(sign, sign > 0 ? 1.0 : 1.1));
       } else {
         push(simT, j * GX + i, K_ESTIM, 0, id);
-        attractors.push({ x: i, y: j, t: simT, n: -1, r: GROW_R, w: 1 }); // only stimuli outside cells
       }
     }
 
