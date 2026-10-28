@@ -108,7 +108,8 @@
       <li><a href="https://github.com/Cartor-H" target="_blank" rel="noopener">GitHub</a></li>
       <li><a href="https://www.linkedin.com/in/cartor-hancock/" target="_blank" rel="noopener">LinkedIn</a></li>
       <li><a href="https://scholar.google.com/citations?user=dDCx9Q4AAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a></li>
-      <li><a href="mailto:hello@cartor.org">Email</a></li>
+      <!-- The address is assembled by script so scrapers don't find it in the page -->
+      <li><a data-user="hello" data-domain="cartor.org">Email</a><noscript> · hello [at] cartor [dot] org</noscript></li>
     </ul>
   </nav>
 
@@ -125,7 +126,10 @@
     // ---------- Terminal menu ----------
 
     const menu = document.getElementById('menu');
-    const links = [...menu.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), label: a.textContent.trim() }));
+    const links = [...menu.querySelectorAll('a')].map(a => ({
+      href: a.dataset.user ? 'mailto:' + a.dataset.user + '@' + a.dataset.domain : a.getAttribute('href'),
+      label: a.textContent.trim(),
+    }));
     const name = menu.querySelector('h1').textContent.trim();
     const BW = 44, IW = 30; // inner box width, item width (in characters)
 
