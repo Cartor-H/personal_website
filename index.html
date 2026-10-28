@@ -27,6 +27,10 @@
       background: var(--bg);
       color: var(--fg);
       font-family: var(--mono);
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none; /* long-press inhibits, so no callout menu */
+      -webkit-user-select: none;
+      user-select: none;
     }
     #tissue {
       position: fixed;
@@ -86,6 +90,8 @@
     .hdr { color: #e9f6f4; font-weight: 700; }
     .item { color: var(--fg); text-decoration: none; outline: none; }
     .item.sel { background: var(--accent); color: var(--sel-fg); }
+    /* Touch: items are spaced a row apart, and the tap area fills the gap */
+    @media (pointer: coarse) { .item { display: inline-block; position: relative; z-index: 1; padding: .6em 0; margin: -.6em 0; } }
 
     /* Shown only if JavaScript is off */
     #menu.static { padding: 24px 32px; background: var(--box); border: 1px solid var(--line); }
@@ -114,7 +120,7 @@
   </nav>
 
   <div class="bar" id="bottom">
-    <span><span class="k">↑↓</span> select  <span class="k">⏎</span> open</span>
+    <span id="keys"><span class="k">↑↓</span> select  <span class="k">⏎</span> open</span>
     <span class="wide"><span class="gold">gold</span> boutons = potentiated synapses (LTP)</span>
     <span id="hint"></span>
   </div>
@@ -161,7 +167,9 @@
     row(() => spaces(BW));
     put('├' + rule + '┤\n', 'b');
     row(() => spaces(BW));
-    const items = links.map(({ href, label }) => {
+    const coarse = matchMedia('(pointer: coarse)').matches;
+    const items = links.map(({ href, label }, k) => {
+      if (coarse && k) row(() => spaces(BW)); // room between tap targets
       const a = document.createElement('a');
       a.className = 'item';
       a.href = href;
@@ -209,6 +217,7 @@
     });
 
     const touchScreen = matchMedia('(hover: none)').matches;
+    if (touchScreen) document.getElementById('keys').remove();
     document.getElementById('hint').innerHTML = touchScreen
       ? '<span class="k">tap</span> excite  <span class="k">hold</span> inhibit'
       : '<span class="k">click</span> excite  <span class="k">right-click</span> inhibit';
