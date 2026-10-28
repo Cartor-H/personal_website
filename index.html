@@ -162,6 +162,8 @@
       a.className = 'item';
       a.href = href;
       a.setAttribute('aria-label', label);
+      a.dataset.goatcounterClick = 'click-' + label.toLowerCase().replace(/\s+/g, '-'); // counted by GoatCounter
+      a.dataset.goatcounterTitle = label;
       a.textContent = '[ ' + label.padEnd(IW - 6) + ' > ]';
       row(() => {
         const l = (BW - IW) >> 1;
@@ -214,12 +216,14 @@
     //  - When they reach the soma they add to its membrane potential. If that
     //    crosses threshold, an action potential starts at the axon hillock.
     //  - The action potential is an all-or-none front: it runs down the axon
-    //    (fast over myelin), back into the soma and dendrites, and cannot cross
-    //    membranes or re-enter refractory membrane.
+    //    (fast over myelin) and through the soma, fades as it back-propagates
+    //    into the dendrites, and cannot cross membranes or re-enter refractory
+    //    membrane.
     //  - A synapse whose input arrives shortly before its target fires gets
     //    stronger (LTP): its bouton grows and turns gold.
-    //  - Dendrite tips grow and branch toward stimuli outside cells and toward
-    //    other neurons' firing axons, and slowly retract when they receive no input.
+    //  - Dendrite tips grow up the extracellular field made by stimuli and by
+    //    other neurons' firing axons, sprout branches toward sources off to the
+    //    side, and slowly retract when they receive no excitation.
 
     const CW = 8, CH = 16; // character cell size in CSS px
     const SOMA = 0, DEND = 1, HILL = 2, AXON = 3, AXM = 4, TERM = 5, MYEL = 6;
@@ -1106,5 +1110,8 @@
     requestAnimationFrame(frame);
   })();
   </script>
+  <!-- GoatCounter analytics, pinned to v5 with an integrity hash -->
+  <script data-goatcounter="https://cartor.goatcounter.com/count" async src="https://gc.zgo.at/count.v5.js"
+          crossorigin="anonymous" integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>
 </body>
 </html>
