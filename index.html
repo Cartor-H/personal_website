@@ -105,9 +105,9 @@
   <nav id="menu" class="static" aria-label="Links">
     <h1>Cartor Hancock</h1>
     <ul>
-      <li><a href="https://github.com/Cartor-H">GitHub</a></li>
-      <li><a href="https://www.linkedin.com/in/cartor-hancock/">LinkedIn</a></li>
-      <li><a href="https://scholar.google.com/citations?user=dDCx9Q4AAAAJ&amp;hl=en">Google Scholar</a></li>
+      <li><a href="https://github.com/Cartor-H" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/in/cartor-hancock/" target="_blank" rel="noopener">LinkedIn</a></li>
+      <li><a href="https://scholar.google.com/citations?user=dDCx9Q4AAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a></li>
       <li><a href="mailto:hello@cartor.org">Email</a></li>
     </ul>
   </nav>
@@ -161,6 +161,7 @@
       const a = document.createElement('a');
       a.className = 'item';
       a.href = href;
+      if (!href.startsWith('mailto:')) { a.target = '_blank'; a.rel = 'noopener'; } // keep this page open
       a.setAttribute('aria-label', label);
       a.dataset.goatcounterClick = 'click-' + label.toLowerCase().replace(/\s+/g, '-'); // counted by GoatCounter
       a.dataset.goatcounterTitle = label;
