@@ -4,103 +4,1029 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cartor Hancock</title>
-  <meta name="description" content="Cartor Hancock's personal site.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%233b6ef5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'>C</text></svg>">
+  <meta name="description" content="Cartor Hancock: GitHub, LinkedIn, Google Scholar and email.">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%2306090c'/><text x='50' y='68' font-size='54' text-anchor='middle' fill='%235fd7d7' font-family='monospace'>C</text></svg>">
   <style>
     :root {
-      --bg: #f6f7f9;
-      --card: #ffffff;
-      --text: #1b1f24;
-      --muted: #5c6670;
-      --border: #e2e6ea;
-      --accent: #3b6ef5;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f1115;
-        --card: #171a21;
-        --text: #e8eaed;
-        --muted: #9aa3ad;
-        --border: #262b34;
-        --accent: #7c9cff;
-      }
+      --bg: #06090c;
+      --fg: #c8d3d5;
+      --dim: #6f8388;
+      --line: #3f8f93;
+      --accent: #5fd7d7;
+      --sel-fg: #041012;
+      --box: #070b0e;
+      --bar: #0d1418;
+      --mono: ui-monospace, "DejaVu Sans Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 16px;
+      height: 100%;
+      overflow: hidden;
       background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.5;
+      color: var(--fg);
+      font-family: var(--mono);
     }
-    main { width: 100%; max-width: 440px; text-align: center; }
-    .avatar {
-      width: 96px; height: 96px; margin: 0 auto 20px;
-      border-radius: 50%;
-      display: grid; place-items: center;
-      background: var(--accent); color: #fff;
-      font-size: 40px; font-weight: 600;
-      object-fit: cover;
+    #tissue {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+      image-rendering: pixelated;
     }
-    h1 { margin: 0 0 32px; font-size: 28px; letter-spacing: -0.01em; }
-    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-    a.link {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      padding: 14px 18px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 500;
-      transition: border-color .15s, transform .15s;
+
+    /* Top and bottom status bars, like a full-screen terminal app */
+    .bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      gap: 2ch;
+      height: 22px;
+      padding: 0 1ch;
+      font-size: 13px;
+      line-height: 22px;
+      background: var(--bar);
+      color: var(--dim);
+      white-space: nowrap;
+      overflow: hidden;
+      user-select: none;
     }
-    a.link:hover, a.link:focus-visible { border-color: var(--accent); transform: translateY(-1px); outline: none; }
-    a.link svg { width: 18px; height: 18px; flex: none; fill: currentColor; }
-    footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+    #top { top: 0; border-bottom: 1px solid #1b262b; }
+    #bottom { bottom: 0; border-top: 1px solid #1b262b; }
+    .k { color: var(--accent); }
+    .gold { color: #ffc450; }
+    @media (max-width: 640px) { .wide { display: none; } }
+
+    /* Centre menu */
+    #menu {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+    .box {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: clamp(9px, calc((100vw - 32px) / 27.6), 16px);
+      line-height: 1.2;
+      white-space: pre;
+      background: var(--box);
+      color: var(--fg);
+      box-shadow: 0 10px 60px 12px rgba(0, 0, 0, .85);
+    }
+    .b { color: var(--line); }
+    .hdr { color: #e9f6f4; font-weight: 700; }
+    .item { color: var(--fg); text-decoration: none; outline: none; }
+    .item.sel { background: var(--accent); color: var(--sel-fg); }
+
+    /* Shown only if JavaScript is off */
+    #menu.static { padding: 24px 32px; background: var(--box); border: 1px solid var(--line); }
+    #menu.static h1 { margin: 0 0 16px; font-size: 20px; }
+    #menu.static ul { margin: 0; padding-left: 20px; line-height: 1.8; }
+    #menu.static a { color: var(--accent); }
   </style>
 </head>
 <body>
-  <main>
-    <!-- To use a photo instead of the letter, replace this div with:
-         <img class="avatar" src="photo.jpg" alt="Cartor Hancock"> -->
-    <div class="avatar" aria-hidden="true">C</div>
+  <canvas id="tissue" aria-hidden="true"></canvas>
 
+  <div class="bar" id="top">
+    <span><span class="k">cartor.org</span><span class="wide"> · neural tissue · long-term potentiation</span></span>
+    <span id="stats"></span>
+  </div>
+
+  <nav id="menu" class="static" aria-label="Links">
     <h1>Cartor Hancock</h1>
-    <!-- Edit, add, or remove links below. Copy a whole <li>...</li> to add one. -->
     <ul>
-      <li>
-        <a class="link" href="https://github.com/Cartor-H">
-          <svg viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.4-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.6.3 2.8.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
-          GitHub
-        </a>
-      </li>
-      <li>
-        <a class="link" href="https://www.linkedin.com/in/cartor-hancock/">
-          <svg viewBox="0 0 24 24"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.3V9h3.4v1.6c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.4 4.3 5.5v6.2ZM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2ZM7.1 20.5H3.5V9h3.6v11.5ZM22.2 0H1.8C.8 0 0 .8 0 1.7v20.6c0 .9.8 1.7 1.8 1.7h20.4c1 0 1.8-.8 1.8-1.7V1.7C24 .8 23.2 0 22.2 0Z"/></svg>
-          LinkedIn
-        </a>
-      </li>
-      <li>
-        <a class="link" href="https://scholar.google.com/citations?user=dDCx9Q4AAAAJ&amp;hl=en">
-          <svg viewBox="0 0 24 24"><path d="M12 2 0 9.5l4 2.5v5.2C4 19.9 7.6 22 12 22s8-2.1 8-4.8V12l2-1.3V17h2V9.5L12 2Zm0 17.5c-3.3 0-5.5-1.4-5.5-2.3v-3.7l5.5 3.4 5.5-3.4v3.7c0 .9-2.2 2.3-5.5 2.3Z"/></svg>
-          Google Scholar
-        </a>
-      </li>
-      <li>
-        <a class="link" href="mailto:hello@cartor.org">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4.2-8 5-8-5V6l8 5 8-5v2.2Z"/></svg>
-          Email me
-        </a>
-      </li>
+      <li><a href="https://github.com/Cartor-H">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/in/cartor-hancock/">LinkedIn</a></li>
+      <li><a href="https://scholar.google.com/citations?user=dDCx9Q4AAAAJ&amp;hl=en">Google Scholar</a></li>
+      <li><a href="mailto:hello@cartor.org">Email</a></li>
     </ul>
+  </nav>
 
-    <footer>© 2026 Cartor Hancock · cartor.org</footer>
-  </main>
+  <div class="bar" id="bottom">
+    <span><span class="k">↑↓</span> select  <span class="k">⏎</span> open</span>
+    <span class="wide"><span class="gold">gold</span> boutons = potentiated synapses (LTP)</span>
+    <span id="hint"></span>
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ---------- Terminal menu ----------
+
+    const menu = document.getElementById('menu');
+    const links = [...menu.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), label: a.textContent.trim() }));
+    const name = menu.querySelector('h1').textContent.trim();
+    const BW = 44, IW = 30; // inner box width, item width (in characters)
+
+    const pre = document.createElement('pre');
+    pre.className = 'box';
+    const put = (s, cls) => {
+      const e = document.createElement('span');
+      if (cls) e.className = cls;
+      e.textContent = s;
+      pre.append(e);
+      return e;
+    };
+    const spaces = n => put(' '.repeat(n));
+    const row = fill => { put('│', 'b'); fill(); put('│\n', 'b'); };
+    const rule = '─'.repeat(BW);
+
+    put('┌' + rule + '┐\n', 'b');
+    row(() => spaces(BW));
+    const title = name.toUpperCase().split('').join(' ');
+    row(() => {
+      const l = (BW - title.length) >> 1;
+      spaces(l);
+      const h = put(title, 'hdr');
+      h.setAttribute('role', 'heading');
+      h.setAttribute('aria-level', '1');
+      h.setAttribute('aria-label', name);
+      spaces(BW - l - title.length);
+    });
+    row(() => spaces(BW));
+    put('├' + rule + '┤\n', 'b');
+    row(() => spaces(BW));
+    const items = links.map(({ href, label }) => {
+      const a = document.createElement('a');
+      a.className = 'item';
+      a.href = href;
+      a.setAttribute('aria-label', label);
+      a.textContent = '[ ' + label.padEnd(IW - 6) + ' > ]';
+      row(() => {
+        const l = (BW - IW) >> 1;
+        spaces(l);
+        pre.append(a);
+        spaces(BW - l - IW);
+      });
+      return a;
+    });
+    row(() => spaces(BW));
+    put('└' + rule + '┘', 'b');
+    menu.replaceChildren(pre);
+    menu.classList.remove('static');
+
+    let sel = 0;
+    function select(i, focus) {
+      sel = (i + items.length) % items.length;
+      items.forEach((a, k) => a.classList.toggle('sel', k === sel));
+      if (focus) items[sel].focus({ preventScroll: true });
+    }
+    items.forEach((a, k) => {
+      a.addEventListener('mouseenter', () => select(k, true));
+      a.addEventListener('focus', () => select(k, false));
+    });
+    select(0, false);
+
+    addEventListener('keydown', e => {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      switch (e.key) {
+        case 'ArrowDown': case 'j': select(sel + 1, true); break;
+        case 'ArrowUp': case 'k': select(sel - 1, true); break;
+        case 'Home': select(0, true); break;
+        case 'End': select(items.length - 1, true); break;
+        case 'Enter': case ' ': items[sel].click(); break;
+        default: return;
+      }
+      e.preventDefault();
+    });
+
+    const touchScreen = matchMedia('(hover: none)').matches;
+    document.getElementById('hint').innerHTML = touchScreen
+      ? '<span class="k">tap</span> excite  <span class="k">hold</span> inhibit'
+      : '<span class="k">click</span> excite  <span class="k">right-click</span> inhibit';
+
+    // ---------- Neural tissue simulation ----------
+    // The screen is a grid of braille dots (2 x 4 per character cell). Each
+    // dot is empty space or a point of a neuron.
+    //  - Inputs (clicks, synapses, background noise) start graded postsynaptic
+    //    potentials that spread passively and fade with distance.
+    //  - When they reach the soma they add to its membrane potential. If that
+    //    crosses threshold, an action potential starts at the axon hillock.
+    //  - The action potential is an all-or-none front: it runs down the axon
+    //    (fast over myelin), back into the soma and dendrites, and cannot cross
+    //    membranes or re-enter refractory membrane.
+    //  - A synapse whose input arrives shortly before its target fires gets
+    //    stronger (LTP): its bouton grows and turns gold.
+    //  - Dendrite tips grow and branch toward stimuli outside cells and toward
+    //    other neurons' firing axons, and slowly retract when they receive no input.
+
+    const CW = 8, CH = 16; // character cell size in CSS px
+    const SOMA = 0, DEND = 1, HILL = 2, AXON = 3, AXM = 4, TERM = 5, MYEL = 6;
+    const SPEED = [70, 70, 70, 90, 600, 70, 1];      // AP speed in dots/s, per point type
+    const BASE = [0.1, 0, 0.08, -0.04, -0.02, 0.18, 0];
+    const REFR = 0.9, BLOCK = -0.35;
+    const AP_THR = 0.6, AP_REF = 0.8, AHP = -0.4, VM_TAU = 0.8;
+    const LAMBDA = 35, PSP_SPEED = 90, PSP_MIN = 0.05;
+    const W0 = 0.95, WMAX = 1.8, LTP_STEP = 0.15, LTP_WIN = 0.6;
+    const STIM_R = 26, STIM_SPEED = 110;
+    const GROW_R = 70, GROW_MAX = 18, SHRINK = 10;
+    const MAXA = 10; // max neighbours per point
+    // Overlapping waves each get their own visited marks, chosen by id
+    const PS = 32, RS = 8; // slots for PSPs and for stimulus rings
+    const K_SPIKE = 0, K_SYN = 1, K_ESTIM = 2, K_PSP = 3;
+    const DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
+    const DL = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function lut(stops, lo, hi) {
+      const out = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        const v = lo + (hi - lo) * i / 255;
+        let k = 0;
+        while (k < stops.length - 2 && v > stops[k + 1][0]) k++;
+        const a = stops[k], b = stops[k + 1];
+        const f = Math.min(1, Math.max(0, (v - a[0]) / (b[0] - a[0])));
+        const c = j => Math.round(a[j] + (b[j] - a[j]) * f);
+        out[i] = (255 << 24) | (c(3) << 16) | (c(2) << 8) | c(1);
+      }
+      return out;
+    }
+    // Brighter = higher (less negative) membrane potential
+    const NEU_STOPS = [[-1.2, 6, 9, 20], [-0.6, 18, 38, 64], [0, 42, 112, 122], [0.45, 70, 180, 185],
+                       [0.9, 165, 240, 228], [1.3, 240, 255, 240], [1.6, 255, 255, 255]];
+    const mixGold = (stops, f) => stops.map(([v, r, g, b]) => {
+      const m = f * Math.max(0, Math.min(1, (v + 0.6) / 0.6));
+      return [v, r + (255 - r) * m, g + (196 - g) * m, b + (80 - b) * m];
+    });
+    const NEU = lut(NEU_STOPS, -1.2, 1.6);
+    const TINT = [0, 0.3, 0.55, 0.8].map(f => lut(mixGold(NEU_STOPS, f), -1.2, 1.6)); // by synapse strength
+    const EXT = lut([[-1, 4, 5, 9], [0, 30, 37, 44], [1, 150, 225, 230]], -1, 1);
+    const MY = lut([[0, 92, 84, 70], [1, 235, 220, 180]], 0, 1);
+    const BG = 0xff0c0906;
+    const level = w => w < 1.12 ? 0 : w < 1.32 ? 1 : w < 1.55 ? 2 : 3;
+
+    const cv = document.getElementById('tissue');
+    const ctx = cv.getContext('2d', { alpha: false });
+
+    let W, H, GX, GY, N, own0, own1, dotPix, img, d32;
+    let neurons, G = 0, Gc = 0, Gtop = 0, free = [];
+    let gCell, gType, gN, gLink, gSyn, gTint, gRing, gTip, isSoma, aCnt, aL, aD, dS;
+    let base, p, pn, tFire, tSched, gTouch, gPsp;
+    let cVis, cStimT, cStimAmp;
+    let nSyn = 0, sPre, sPost, sW, sLast, sLvl, inSyn;
+    let nV, nAP, nHill, nDend, active;
+    let tips = [], attractors = [], tipLimit = 0;
+    const stimSigns = [0], stimAmp = [0];
+    let stimCount = 0;
+    function newStim(sign, amp) {
+      const id = ++stimCount;
+      stimSigns[id] = sign;
+      stimAmp[id] = amp;
+      return id;
+    }
+
+    // Event queue (binary min-heap on time)
+    let hCap = 1 << 15, hN = 0;
+    let hT = new Float64Array(hCap), hI = new Int32Array(hCap), hK = new Uint8Array(hCap);
+    let hA = new Float32Array(hCap), hS = new Int32Array(hCap);
+    let eT, eI, eK, eA, eS;
+    function grow() {
+      hCap *= 2;
+      const c = (A, T) => { const n = new T(hCap); n.set(A); return n; };
+      hT = c(hT, Float64Array); hI = c(hI, Int32Array); hK = c(hK, Uint8Array);
+      hA = c(hA, Float32Array); hS = c(hS, Int32Array);
+    }
+    function push(t, i, k, a, s) {
+      if (hN >= 4e6) return;
+      if (hN === hCap) grow();
+      let n = hN++;
+      while (n > 0) {
+        const q = (n - 1) >> 1;
+        if (hT[q] <= t) break;
+        hT[n] = hT[q]; hI[n] = hI[q]; hK[n] = hK[q]; hA[n] = hA[q]; hS[n] = hS[q];
+        n = q;
+      }
+      hT[n] = t; hI[n] = i; hK[n] = k; hA[n] = a; hS[n] = s;
+    }
+    function pop() {
+      eT = hT[0]; eI = hI[0]; eK = hK[0]; eA = hA[0]; eS = hS[0];
+      const m = --hN;
+      if (m === 0) return;
+      const t = hT[m], i = hI[m], k = hK[m], a = hA[m], s = hS[m];
+      let n = 0;
+      for (;;) {
+        let c = 2 * n + 1;
+        if (c >= m) break;
+        if (c + 1 < m && hT[c + 1] < hT[c]) c++;
+        if (hT[c] >= t) break;
+        hT[n] = hT[c]; hI[n] = hI[c]; hK[n] = hK[c]; hA[n] = hA[c]; hS[n] = hS[c];
+        n = c;
+      }
+      hT[n] = t; hI[n] = i; hK[n] = k; hA[n] = a; hS[n] = s;
+    }
+
+    // ----- Geometry -----
+    // While generating, points are keyed by layer * N + cell. Layer 0 holds
+    // soma, dendrites and hillock; layer 1 holds the axon, so an axon can
+    // cross its own dendrites without merging with them.
+
+    function add(n, x, y, type, layer) {
+      const xi = Math.round(x), yi = Math.round(y);
+      if (xi < 0 || yi < 0 || xi >= GX || yi >= GY) return -1;
+      const key = layer * N + yi * GX + xi;
+      let k = n.map.get(key);
+      if (k !== undefined) return k;
+      k = n.key.length;
+      n.map.set(key, k);
+      n.key.push(key);
+      n.type.push(type);
+      n.link.push(-1);
+      return k;
+    }
+    function disc(n, x, y, r, type, layer) {
+      if (r < 0.75) return add(n, x, y, type, layer);
+      const R = Math.ceil(r);
+      for (let dy = -R; dy <= R; dy++)
+        for (let dx = -R; dx <= R; dx++)
+          if (dx * dx + dy * dy <= r * r + 0.3) add(n, x + dx, y + dy, type, layer);
+    }
+
+    function growDendrite(n, x, y, a, w, len, depth) {
+      const thin = []; // one-dot-wide run at the end of the branch, which can later retract
+      for (let s = 0; s < len; s++) {
+        a += (Math.random() - 0.5) * 0.3;
+        x += Math.cos(a);
+        y += Math.sin(a);
+        const r = w * (1 - 0.65 * s / len) / 2;
+        disc(n, x, y, r, DEND, 0);
+        if (r < 0.75) thin.push(add(n, x, y, DEND, 0));
+        else {
+          thin.length = 0;
+          if (Math.random() < 0.07) { // spine
+            const side = Math.random() < 0.5 ? 1 : -1, o = Math.floor(r) + 1;
+            add(n, x - Math.sin(a) * o * side, y + Math.cos(a) * o * side, DEND, 0);
+          }
+        }
+        if (depth < 3 && s > 4 && len - s > 8 && Math.random() < 0.08) {
+          const side = Math.random() < 0.5 ? 1 : -1;
+          growDendrite(n, x, y, a + side * (0.45 + Math.random() * 0.45), w * 0.72, (len - s) * 0.85, depth + 1);
+          a -= side * 0.2;
+          thin.length = 0;
+        }
+      }
+      n.tips.push({ a, path: thin.slice(-12) });
+    }
+
+    function makeNeuron(cx, cy) {
+      const n = { cx, cy, map: new Map(), key: [], type: [], link: [], extra: [], term: [], tips: [], hill: -1 };
+      const theta = Math.random() * Math.PI * 2;
+      const pyramidal = Math.random() < 0.6;
+      const r0 = 4.2 + Math.random() * 2.4, f1 = Math.random() * 6.3, f2 = Math.random() * 6.3;
+      n.R = a => r0 * (1 + 0.14 * Math.sin(2 * a + f1) + 0.09 * Math.sin(3 * a + f2) +
+                      (pyramidal ? 0.5 * Math.max(0, Math.cos(a - theta)) ** 4 : 0));
+      n.somaLocal = add(n, cx, cy, SOMA, 0);
+      const ext = Math.ceil(r0 * 1.8);
+      for (let dy = -ext; dy <= ext; dy++)
+        for (let dx = -ext; dx <= ext; dx++)
+          if (Math.hypot(dx, dy) <= n.R(Math.atan2(dy, dx))) add(n, cx + dx, cy + dy, SOMA, 0);
+
+      const count = 4 + (Math.random() * 4 | 0);
+      for (let k = 0; k < count; k++) {
+        const apical = pyramidal && k === 0;
+        const a = theta + k * 2 * Math.PI / count + (apical ? 0 : (Math.random() - 0.5) * 0.7);
+        const R = n.R(a) * 0.85;
+        growDendrite(n, cx + Math.cos(a) * R, cy + Math.sin(a) * R, a,
+                     apical ? 3 : 2.1, apical ? 40 + Math.random() * 25 : 16 + Math.random() * 20, 0);
+      }
+      return n;
+    }
+
+    function makeAxon(n, idx) {
+      const others = neurons.map((m, k) => [k, Math.hypot(m.cx - n.cx, m.cy - n.cy)])
+        .filter(([k, d]) => k !== idx && d > 30 && d < 180)
+        .sort((a, b) => a[1] - b[1]);
+      if (!others.length) return;
+      const ti = others[Math.random() * Math.min(3, others.length) | 0][0];
+      const T = neurons[ti];
+
+      // Axon hillock: a cone narrowing away from the soma
+      const a = Math.atan2(T.cy - n.cy, T.cx - n.cx);
+      const R = n.R(a);
+      let x = n.cx + Math.cos(a) * R * 0.8, y = n.cy + Math.sin(a) * R * 0.8;
+      for (let s = 0; s < 6; s++) {
+        x += Math.cos(a);
+        y += Math.sin(a);
+        disc(n, x, y, 1.6 - s * 0.18, HILL, 0);
+        n.hill = add(n, x, y, HILL, 0);
+      }
+
+      // Trunk: meanders toward the target neuron
+      let dx = Math.cos(a), dy = Math.sin(a);
+      const path = [];
+      for (let s = 0; s < 800; s++) {
+        const tx = T.cx - x, ty = T.cy - y, d = Math.hypot(tx, ty);
+        if (d < 22) break;
+        dx = dx * 0.9 + tx / d * 0.1 + (Math.random() - 0.5) * 0.25;
+        dy = dy * 0.9 + ty / d * 0.1 + (Math.random() - 0.5) * 0.25;
+        const m = Math.hypot(dx, dy);
+        dx /= m; dy /= m;
+        x += dx; y += dy;
+        path.push([x, y]);
+      }
+      if (!path.length) return;
+      const L0 = path.length;
+      const core = path.map(([px, py], s) => {
+        const myelinated = s >= 6 && s < L0 - 8 && (s - 6) % 24 < 17; // gaps are nodes of Ranvier
+        return add(n, px, py, myelinated ? AXM : AXON, 1);
+      });
+      if (n.hill >= 0 && core[0] >= 0) n.extra.push([n.hill, core[0]]);
+
+      // Myelin sheath around the myelinated segments
+      path.forEach(([px, py], s) => {
+        if (core[s] < 0 || n.type[core[s]] !== AXM) return;
+        for (let oy = -2; oy <= 2; oy++)
+          for (let ox = -2; ox <= 2; ox++) {
+            if (ox * ox + oy * oy > 2.9) continue;
+            const before = n.key.length;
+            const k = add(n, px + ox, py + oy, MYEL, 1);
+            if (n.key.length > before) n.link[k] = core[s];
+          }
+      });
+
+      // Axon terminals: branches ending in boutons beside the target's dendrites
+      const [ex, ey] = path[L0 - 1];
+      const dends = [];
+      T.type.forEach((t, k) => {
+        if (t !== DEND) return;
+        const c = T.key[k];
+        dends.push([c % GX, (c / GX) | 0, k]);
+      });
+      if (!dends.length) return;
+      let cands = dends.filter(([px, py]) => { const d = Math.hypot(px - ex, py - ey); return d > 6 && d < 40; });
+      if (!cands.length) cands = dends.slice().sort((u, v) => Math.hypot(u[0] - ex, u[1] - ey) - Math.hypot(v[0] - ex, v[1] - ey)).slice(0, 2);
+      const picks = [], nb = 2 + (Math.random() * 2 | 0);
+      for (let t = 0; t < 40 && picks.length < nb; t++) {
+        const c = cands[Math.random() * cands.length | 0];
+        if (picks.every(q => Math.hypot(q[0] - c[0], q[1] - c[1]) > 8)) picks.push(c);
+      }
+      for (const [px, py, pk] of picks) {
+        let bx = ex, by = ey;
+        let ux = px - ex, uy = py - ey;
+        const um = Math.hypot(ux, uy) || 1;
+        ux /= um; uy /= um;
+        for (let s = 0; s < 140; s++) {
+          const tx = px - bx, ty = py - by, d = Math.hypot(tx, ty);
+          if (d <= 4.5) break;
+          ux = ux * 0.7 + tx / d * 0.3 + (Math.random() - 0.5) * 0.4;
+          uy = uy * 0.7 + ty / d * 0.3 + (Math.random() - 0.5) * 0.4;
+          const m = Math.hypot(ux, uy);
+          ux /= m; uy /= m;
+          bx += ux; by += uy;
+          add(n, bx, by, AXON, 1);
+        }
+        const b = add(n, bx, by, TERM, 1);
+        if (b < 0) continue;
+        n.type[b] = TERM;
+        // Bouton in rings; outer rings only show once the synapse is potentiated
+        const ring = [[b, 0]], cx = Math.round(bx), cy = Math.round(by);
+        for (let oy = -2; oy <= 2; oy++)
+          for (let ox = -2; ox <= 2; ox++) {
+            const r2 = ox * ox + oy * oy;
+            if (r2 > 5.3) continue;
+            const before = n.key.length;
+            const k = add(n, cx + ox, cy + oy, TERM, 1);
+            if (n.key.length > before) ring.push([k, r2 <= 1 ? 0 : r2 <= 2.5 ? 1 : 2]);
+          }
+        n.term.push({ b, ring, post: ti, postK: pk });
+      }
+    }
+
+    function generate() {
+      const r = menu.getBoundingClientRect();
+      const mx0 = r.left / 4 - 10, mx1 = r.right / 4 + 10, my0 = r.top / 4 - 10, my1 = r.bottom / 4 + 10;
+      const want = Math.max(8, Math.min(70, Math.round(GX * GY / 2200)));
+      const somas = [];
+      for (let t = 0; t < 6000 && somas.length < want; t++) {
+        const x = -12 + Math.random() * (GX + 24), y = -12 + Math.random() * (GY + 24);
+        if (x > mx0 && x < mx1 && y > my0 && y < my1) continue;
+        if (somas.some(s => (s[0] - x) ** 2 + (s[1] - y) ** 2 < 30 * 30)) continue;
+        somas.push([x, y]);
+      }
+      neurons = somas.map(([x, y]) => makeNeuron(x, y));
+      neurons.forEach((n, k) => makeAxon(n, k));
+      assemble();
+    }
+
+    function setOwner(c, g) {
+      if (own0[c] < 0) own0[c] = g; else own1[c] = g;
+    }
+    function clearOwner(c, g) {
+      if (own1[c] === g) own1[c] = -1;
+      else if (own0[c] === g) { own0[c] = own1[c]; own1[c] = -1; }
+    }
+    function link(g, h, d) {
+      if (aCnt[g] >= MAXA) return false;
+      aL[g * MAXA + aCnt[g]] = h;
+      aD[g * MAXA + aCnt[g]] = d;
+      aCnt[g]++;
+      return true;
+    }
+
+    // Flatten all neurons into typed arrays. Spare capacity is left for growth.
+    function assemble() {
+      G = 0;
+      neurons.forEach(n => { n.off = G; G += n.key.length; });
+      const tipCount = neurons.reduce((s, n) => s + n.tips.length, 0);
+      tipLimit = tipCount * 3;
+      Gc = G + tipLimit * (GROW_MAX + 2) + 64;
+      Gtop = G;
+      free = [];
+      gCell = new Int32Array(Gc); gType = new Uint8Array(Gc); gN = new Uint16Array(Gc);
+      gLink = new Int32Array(Gc).fill(-1); gSyn = new Int32Array(Gc).fill(-1); gTint = new Int32Array(Gc).fill(-1);
+      gRing = new Uint8Array(Gc); gTip = new Int32Array(Gc).fill(-1); isSoma = new Uint8Array(Gc);
+      aCnt = new Uint8Array(Gc); aL = new Int32Array(Gc * MAXA); aD = new Float32Array(Gc * MAXA);
+      dS = new Float32Array(Gc).fill(60);
+      base = new Float32Array(Gc); p = new Float32Array(Gc); pn = new Float32Array(Gc);
+      tFire = new Float64Array(Gc).fill(-1e9); tSched = new Float64Array(Gc).fill(-1e9);
+      gTouch = new Int32Array(Gc * RS); gPsp = new Int32Array(Gc * PS);
+
+      neurons.forEach((n, ni) => {
+        const o = n.off;
+        n.gmap = new Map(); // cell -> global point, layer 0 only (used for growth)
+        for (let k = 0; k < n.key.length; k++) {
+          const g = o + k, key = n.key[k], layer = key >= N ? 1 : 0, c = key - layer * N;
+          const x = c % GX, y = (c / GX) | 0, t = n.type[k];
+          gCell[g] = c; gType[g] = t; gN[g] = ni;
+          if (n.link[k] >= 0) gLink[g] = o + n.link[k];
+          base[g] = BASE[t] + (Math.random() - 0.5) * 0.1;
+          setOwner(c, g);
+          if (layer === 0) n.gmap.set(c, g);
+          if (t === MYEL) continue;
+          for (let d = 0; d < 8; d++) {
+            const nx = x + DX[d], ny = y + DY[d];
+            if (nx < 0 || ny < 0 || nx >= GX || ny >= GY) continue;
+            const k2 = n.map.get(layer * N + ny * GX + nx);
+            if (k2 === undefined || n.type[k2] === MYEL) continue;
+            link(g, o + k2, DL[d] * (0.85 + Math.random() * 0.3));
+          }
+        }
+        n.extra.forEach(([a, b]) => { link(o + a, o + b, 1); link(o + b, o + a, 1); });
+        if (n.somaLocal >= 0) {
+          // Path distance of every point from the soma centre
+          const s = o + n.somaLocal, q = [s], seen = new Set(q);
+          isSoma[s] = 1;
+          dS[s] = 0;
+          for (let i = 0; i < q.length; i++) {
+            const g = q[i];
+            for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
+              const h = aL[k];
+              if (seen.has(h)) continue;
+              seen.add(h);
+              dS[h] = dS[g] + aD[k];
+              q.push(h);
+            }
+          }
+        }
+      });
+
+      const syn = [];
+      neurons.forEach(n => n.term.forEach(t => syn.push({
+        pre: n.off + t.b, ring: t.ring.map(([k, r]) => [n.off + k, r]), post: neurons[t.post].off + t.postK, postN: t.post,
+      })));
+      nSyn = syn.length;
+      sPre = new Int32Array(nSyn); sPost = new Int32Array(nSyn); sW = new Float32Array(nSyn);
+      sLvl = new Uint8Array(nSyn); sLast = new Float64Array(nSyn).fill(-1e9);
+      inSyn = neurons.map(() => []);
+      syn.forEach((s, i) => {
+        sPre[i] = s.pre; sPost[i] = s.post; sW[i] = W0 * (0.85 + Math.random() * 0.2);
+        sLvl[i] = level(sW[i]);
+        gSyn[s.pre] = i;
+        for (const [g, r] of s.ring) { gRing[g] = r; gTint[g] = i; base[g] = BASE[TERM]; }
+        // Postsynaptic density on the dendrite also takes the synapse's colour
+        gTint[s.post] = i;
+        for (let k = s.post * MAXA, e = k + aCnt[s.post]; k < e; k++) if (gTint[aL[k]] < 0) gTint[aL[k]] = i;
+        inSyn[s.postN].push(i);
+      });
+
+      tips = [];
+      const keep = new Set(syn.map(s => s.post));
+      neurons.forEach((n, ni) => n.tips.forEach(t => {
+        let st = [...new Set(t.path.filter(k => k >= 0).map(k => n.off + k))];
+        let cut = 0;
+        st.forEach((g, i) => { if (keep.has(g) || gTip[g] >= 0 || isSoma[g]) cut = i + 1; });
+        st = st.slice(cut);
+        if (st.length < 2) return;
+        const ti = tips.length, c = gCell[st[st.length - 1]];
+        st.forEach(g => { gTip[g] = ti; });
+        tips.push({ n: ni, x: c % GX, y: (c / GX) | 0, a: t.a, stack: st, anchor: -1,
+                    floor: Math.max(1, st.length - SHRINK), max: st.length + GROW_MAX, last: 0 });
+      }));
+
+      nV = new Float32Array(neurons.length);
+      nAP = new Float64Array(neurons.length).fill(-1e9);
+      nHill = neurons.map(n => n.hill >= 0 ? n.off + n.hill : n.somaLocal >= 0 ? n.off + n.somaLocal : -1);
+      nDend = neurons.map(n => {
+        const out = [];
+        n.type.forEach((t, k) => { if (t === DEND) out.push(n.off + k); });
+        return out;
+      });
+      active = neurons.map((_, i) => i).filter(i => neurons[i].somaLocal >= 0 && nDend[i].length);
+    }
+
+    function build() {
+      W = innerWidth; H = innerHeight;
+      cv.width = W; cv.height = H;
+      img = ctx.createImageData(W, H);
+      d32 = new Uint32Array(img.data.buffer);
+      d32.fill(BG);
+      GX = Math.ceil(W / CW) * 2; GY = Math.ceil(H / CH) * 4; N = GX * GY;
+      dotPix = new Int32Array(N);
+      for (let j = 0; j < GY; j++)
+        for (let i = 0; i < GX; i++) {
+          const x = (i >> 1) * CW + ((i & 1) ? 5 : 2), y = (j >> 2) * CH + (j & 3) * 4 + 2;
+          dotPix[j * GX + i] = (x + 1 < W && y + 1 < H) ? y * W + x : -1;
+        }
+      own0 = new Int32Array(N).fill(-1); own1 = new Int32Array(N).fill(-1);
+      cVis = new Int32Array(N * RS); cStimT = new Float64Array(N).fill(-1e9); cStimAmp = new Float32Array(N);
+      hN = 0;
+      attractors = [];
+      generate();
+    }
+
+    // ----- Dynamics -----
+
+    let simT = 0, apCount = 0;
+
+    // Action potential front: all-or-none, blocked by refractory or strongly
+    // hyperpolarised membrane
+    function fire(t, g) {
+      if (t - tFire[g] < REFR || p[g] < BLOCK) return;
+      tFire[g] = t;
+      const ty = gType[g];
+      if ((ty === AXON || ty === AXM || ty === TERM) && (g & 7) === 0 && attractors.length < 600) {
+        const c = gCell[g];
+        attractors.push({ x: c % GX, y: (c / GX) | 0, t, n: gN[g], r: 30, w: 0.35 });
+      }
+      if (gSyn[g] >= 0) push(t + 0.05, gSyn[g], K_SYN, 0, 0);
+      for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
+        const h = aL[k];
+        if (t - tFire[h] < REFR) continue;
+        const tt = t + aD[k] / SPEED[gType[h]];
+        if (tSched[h] > t && tSched[h] <= tt) continue;
+        tSched[h] = tt;
+        push(tt, h, K_SPIKE, 0, 0);
+      }
+    }
+
+    // Graded potential: spreads passively, shrinking with distance
+    function psp(t, g, d, id) {
+      const slot = id & (PS - 1);
+      if (gPsp[g * PS + slot] === id) return;
+      const amp = stimAmp[id] * Math.exp(-d / LAMBDA);
+      if (amp < PSP_MIN) return;
+      gPsp[g * PS + slot] = id;
+      const sign = stimSigns[id];
+      p[g] += sign * Math.min(amp, 1.2) * 0.55;
+      if (gTip[g] >= 0) tips[gTip[g]].last = t;
+      if (isSoma[g]) nV[gN[g]] += sign * amp;
+      for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
+        const h = aL[k];
+        if (gPsp[h * PS + slot] !== id) push(t + aD[k] / PSP_SPEED, h, K_PSP, d + aD[k], id);
+      }
+    }
+
+    function synapse(t, s) {
+      sLast[s] = t;
+      if (Math.random() < 0.2) return; // release failure
+      const q = sPost[s];
+      if (!aCnt[q]) return;
+      // Scaled so the size at the soma depends on weight, not on distance
+      push(t, q, K_PSP, 0, newStim(1, Math.min(3, sW[s] * 0.45 * Math.exp(dS[q] / LAMBDA))));
+      // Transmitter release: flash the cleft
+      const b = sPre[s], bx = gCell[b] % GX, by = (gCell[b] / GX) | 0, qx = gCell[q] % GX, qy = (gCell[q] / GX) | 0;
+      const steps = Math.max(Math.abs(qx - bx), Math.abs(qy - by));
+      for (let i = 1; i < steps; i++) {
+        const c = Math.round(by + (qy - by) * i / steps) * GX + Math.round(bx + (qx - bx) * i / steps);
+        if (own0[c] < 0) { cStimT[c] = t; cStimAmp[c] = 3; }
+      }
+    }
+
+    // Hebbian LTP: inputs that arrived shortly before this neuron fired get stronger
+    function potentiate(n, t) {
+      for (const s of inSyn[n]) {
+        const d = t - sLast[s];
+        if (d < 0 || d > LTP_WIN || sW[s] >= WMAX) continue;
+        sW[s] = Math.min(WMAX, sW[s] + LTP_STEP);
+        sLvl[s] = level(sW[s]);
+      }
+    }
+
+    // Soma membrane potential: sums PSPs, leaks, fires at threshold
+    function integrate(dt) {
+      const dec = Math.exp(-dt / VM_TAU);
+      for (let n = 0; n < nV.length; n++) {
+        nV[n] *= dec;
+        if (nV[n] >= AP_THR && simT - nAP[n] >= AP_REF && nHill[n] >= 0) {
+          nAP[n] = simT;
+          nV[n] = AHP;
+          apCount++;
+          push(simT, nHill[n], K_SPIKE, 0, 0);
+          potentiate(n, simT);
+        }
+      }
+    }
+
+    function touch(g, sign, amp, t, id) {
+      const i = g * RS + (id & (RS - 1));
+      if (gTouch[i] === id) return;
+      gTouch[i] = id;
+      const ty = gType[g];
+      if (ty === MYEL) return; // insulated
+      if (sign > 0 && (ty === AXON || ty === AXM || ty === TERM)) {
+        if (amp > 0.5) push(t, g, K_SPIKE, 0, 0); // strong enough to excite the axon directly
+        return;
+      }
+      push(t, g, K_PSP, -LAMBDA * Math.log(Math.max(amp, 0.01)), id + 1);
+    }
+
+    // Stimulus ring through the extracellular space; it flows around cells
+    function estim(t, c, d, id) {
+      const slot = id & (RS - 1);
+      if (cVis[c * RS + slot] === id) return;
+      const sign = stimSigns[id], amp = 1 - d / STIM_R;
+      cVis[c * RS + slot] = id; cStimT[c] = t; cStimAmp[c] = sign * amp;
+      const x = c % GX, y = (c / GX) | 0;
+      for (let k = 0; k < 8; k++) {
+        const nx = x + DX[k], ny = y + DY[k];
+        if (nx < 0 || ny < 0 || nx >= GX || ny >= GY) continue;
+        const nc = ny * GX + nx;
+        if (own0[nc] >= 0) {
+          touch(own0[nc], sign, amp, t, id);
+          if (own1[nc] >= 0) touch(own1[nc], sign, amp, t, id);
+        } else if (cVis[nc * RS + slot] !== id) {
+          const nd = d + DL[k] * (0.9 + Math.random() * 0.2);
+          if (nd <= STIM_R) push(t + (nd - d) / STIM_SPEED, nc, K_ESTIM, nd, id);
+        }
+      }
+    }
+
+    function processEvents(t) {
+      let budget = 150000;
+      while (hN > 0 && hT[0] <= t && budget--) {
+        pop();
+        if (eK === K_SPIKE) fire(eT, eI);
+        else if (eK === K_SYN) synapse(eT, eI);
+        else if (eK === K_ESTIM) estim(eT, eI, eA, eS);
+        else psp(eT, eI, eA, eS);
+      }
+    }
+
+    // Passive spread and leak of local potential
+    function diffuse(dt) {
+      const dec = Math.exp(-dt / 1.4);
+      for (let g = 0; g < Gtop; g++) {
+        const cnt = aCnt[g], v = p[g];
+        if (!cnt) { pn[g] = v * dec; continue; }
+        let s = 0;
+        for (let k = g * MAXA, e = k + cnt; k < e; k++) s += p[aL[k]];
+        const nv = (v + 0.2 * (s / cnt - v)) * dec;
+        pn[g] = nv > 1.5 ? 1.5 : nv < -1.5 ? -1.5 : nv;
+      }
+      const tmp = p; p = pn; pn = tmp;
+    }
+
+    // ----- Dendrite growth -----
+
+    // A tip is a stack of points it may add or remove. Tips that branched off
+    // during growth start empty from an anchor point and can retract fully.
+    const tipEnd = t => t.stack.length ? t.stack[t.stack.length - 1] : t.anchor;
+
+    function growTip(ti, ax, ay) {
+      const t = tips[ti], n = neurons[t.n], top = tipEnd(t);
+      if (aCnt[top] >= MAXA) return;
+      let diff = Math.atan2(ay - t.y, ax - t.x) - t.a;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      t.a += Math.max(-0.3, Math.min(0.3, diff)) + (Math.random() - 0.5) * 0.2;
+      const tc = gCell[top];
+      let x = t.x, y = t.y, c = tc;
+      for (let s = 0; s < 3 && c === tc; s++) {
+        x += Math.cos(t.a);
+        y += Math.sin(t.a);
+        const xi = Math.round(x), yi = Math.round(y);
+        if (xi < 0 || yi < 0 || xi >= GX || yi >= GY) return;
+        c = yi * GX + xi;
+      }
+      if (c === tc || n.gmap.has(c)) return;
+      const g = free.length ? free.pop() : Gtop < Gc ? Gtop++ : -1;
+      if (g < 0) return;
+      gCell[g] = c; gType[g] = DEND; gN[g] = t.n; gLink[g] = -1; gSyn[g] = -1; gTint[g] = -1; gRing[g] = 0;
+      isSoma[g] = 0; aCnt[g] = 0; p[g] = 0; pn[g] = 0; tFire[g] = -1e9; tSched[g] = -1e9;
+      gTouch.fill(0, g * RS, g * RS + RS); gPsp.fill(0, g * PS, g * PS + PS);
+      base[g] = BASE[DEND] + (Math.random() - 0.5) * 0.1;
+      link(g, top, 1);
+      link(top, g, 1);
+      dS[g] = dS[top] + 1;
+      n.gmap.set(c, g);
+      setOwner(c, g);
+      gTip[g] = ti;
+      t.stack.push(g);
+      t.x = x; t.y = y;
+
+      // Occasionally fork: the new branch is its own tip, anchored here
+      if (t.stack.length > 2 && tips.length < tipLimit && Math.random() < 0.08) {
+        const side = Math.random() < 0.5 ? 1 : -1;
+        tips.push({ n: t.n, x, y, a: t.a + side * (0.5 + Math.random() * 0.5), stack: [], anchor: g,
+                    floor: 0, max: GROW_MAX >> 1, last: simT });
+        t.a -= side * 0.2;
+      }
+    }
+
+    function retractTip(ti) {
+      const t = tips[ti];
+      if (t.stack.length <= t.floor) return;
+      const g = t.stack[t.stack.length - 1];
+      // Only retract a free end: every neighbour must belong to this tip (or be its anchor)
+      for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
+        const h = aL[k];
+        if (gTip[h] !== ti && h !== t.anchor) return;
+      }
+      for (let k = g * MAXA, e = k + aCnt[g]; k < e; k++) {
+        const h = aL[k], hb = h * MAXA;
+        for (let j = hb, je = hb + aCnt[h]; j < je; j++) {
+          if (aL[j] !== g) continue;
+          const lj = hb + aCnt[h] - 1;
+          aL[j] = aL[lj]; aD[j] = aD[lj];
+          aCnt[h]--;
+          break;
+        }
+      }
+      aCnt[g] = 0; gTip[g] = -1; p[g] = 0; pn[g] = 0;
+      t.stack.pop();
+      clearOwner(gCell[g], g);
+      neurons[t.n].gmap.delete(gCell[g]);
+      free.push(g);
+      const c = gCell[tipEnd(t)];
+      t.x = c % GX; t.y = (c / GX) | 0;
+    }
+
+    // Attractors are recent extracellular clicks and recently firing axon
+    // segments of other neurons. Each pulls tips within its range for a moment.
+    function growth(dt) {
+      attractors = attractors.filter(a => simT - a.t < 1.5);
+      for (let ti = 0; ti < tips.length; ti++) {
+        const t = tips[ti];
+        if (!t.stack.length && t.anchor < 0) continue;
+        let best = null, bs = 0;
+        for (const a of attractors) {
+          if (a.n === t.n) continue;
+          const d = Math.hypot(a.x - t.x, a.y - t.y);
+          if (d >= a.r || d < 3) continue;
+          const score = a.w * (1 - d / a.r);
+          if (score > bs) { bs = score; best = a; }
+        }
+        if (best) {
+          t.last = simT;
+          if (t.stack.length < t.max && Math.random() < dt * 6 * bs) growTip(ti, best.x, best.y);
+        } else if (simT - t.last > 12 && Math.random() < dt * 0.25) {
+          retractTip(ti);
+        }
+      }
+    }
+
+    // ----- Drawing -----
+
+    const spike = d => Math.exp(-d / 0.09) - 0.3 * (d / 0.25) * Math.exp(1 - d / 0.25);
+
+    function render(t) {
+      for (let c = 0; c < N; c++) {
+        const px = dotPix[c];
+        if (px < 0) continue;
+        let g = own1[c] >= 0 ? own1[c] : own0[c];
+        if (g >= 0 && gType[g] === TERM && gRing[g] > Math.min(2, sLvl[gTint[g]])) g = -1;
+        let col;
+        if (g < 0) {
+          const d = t - cStimT[c];
+          let v = 0;
+          if (d >= 0 && d < 0.8) v = cStimAmp[c] * Math.exp(-d / 0.06);
+          const i = (v * 127.5 + 127.5) | 0;
+          col = EXT[i < 0 ? 0 : i > 255 ? 255 : i];
+        } else if (gType[g] === MYEL) {
+          const l = gLink[g];
+          let v = 0;
+          if (l >= 0) { const d = t - tFire[l]; if (d >= 0 && d < 1) v = Math.exp(-d / 0.18); }
+          col = MY[(v * 255) | 0];
+        } else {
+          const ty = gType[g];
+          let v = base[g] + p[g];
+          if (ty === SOMA || ty === HILL) v += nV[gN[g]] * 0.7;
+          const d = t - tFire[g];
+          if (d >= 0 && d < 3) v += spike(d) * (ty === DEND ? 0.75 : 1);
+          const s = gTint[g];
+          const i = ((v + 1.2) * 91.07) | 0;
+          col = (s >= 0 ? TINT[sLvl[s]] : NEU)[i < 0 ? 0 : i > 255 ? 255 : i];
+        }
+        d32[px] = col; d32[px + 1] = col; d32[px + W] = col; d32[px + W + 1] = col;
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    // ----- Input -----
+
+    function stimulate(x, y, sign) {
+      const i = Math.max(0, Math.min(GX - 1, Math.floor(x / 4)));
+      const j = Math.max(0, Math.min(GY - 1, Math.floor(y / 4)));
+      const id = newStim(sign, 0);          // ring through extracellular space
+      newStim(sign, sign > 0 ? 0.9 : 1.0);  // id + 1: the PSP it causes where it meets a cell
+      let g = -1;
+      for (let k = -1; k < 8 && g < 0; k++) {
+        const nx = k < 0 ? i : i + DX[k], ny = k < 0 ? j : j + DY[k];
+        if (nx < 0 || ny < 0 || nx >= GX || ny >= GY) continue;
+        const c = ny * GX + nx;
+        g = own1[c] >= 0 ? own1[c] : own0[c];
+      }
+      if (g >= 0 && gType[g] === MYEL) g = gLink[g];
+      if (g >= 0) {
+        const ty = gType[g];
+        if (sign > 0 && (ty === AXON || ty === AXM || ty === TERM)) push(simT, g, K_SPIKE, 0, 0);
+        else push(simT, g, K_PSP, 0, newStim(sign, sign > 0 ? 1.0 : 1.1));
+      } else {
+        push(simT, j * GX + i, K_ESTIM, 0, id);
+        attractors.push({ x: i, y: j, t: simT, n: -1, r: GROW_R, w: 1 }); // only stimuli outside cells
+      }
+    }
+
+    let holdTimer = 0;
+    cv.addEventListener('contextmenu', e => e.preventDefault());
+    cv.addEventListener('pointerdown', e => {
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      if (e.pointerType === 'touch') {
+        const x = e.clientX, y = e.clientY;
+        holdTimer = setTimeout(() => { holdTimer = 0; stimulate(x, y, -1); }, 450);
+      } else if (e.button === 0) stimulate(e.clientX, e.clientY, 1);
+      else if (e.button === 2) stimulate(e.clientX, e.clientY, -1);
+    });
+    const endTouch = e => {
+      if (e.pointerType !== 'touch' || !holdTimer) return;
+      clearTimeout(holdTimer);
+      holdTimer = 0;
+      if (e.type === 'pointerup') stimulate(e.clientX, e.clientY, 1);
+    };
+    cv.addEventListener('pointerup', endTouch);
+    cv.addEventListener('pointercancel', endTouch);
+
+    // ----- Main loop -----
+
+    const stats = document.getElementById('stats');
+    let last = performance.now(), nextNoise = 0.3, nextStat = 0;
+    const apWindow = [];
+
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      simT += dt;
+
+      // Background synaptic noise: mostly small inputs, sometimes a strong one
+      if (simT > nextNoise && active.length) {
+        nextNoise = simT + (reduceMotion ? 1.5 : 0.22) * (0.5 + Math.random());
+        const n = active[Math.random() * active.length | 0], ds = nDend[n], g = ds[Math.random() * ds.length | 0];
+        if (aCnt[g] && gN[g] === n) {
+          const a = Math.random() < 0.06 ? 0.7 : 0.1 + Math.random() * 0.3;
+          push(simT, g, K_PSP, 0, newStim(1, Math.min(3, a * Math.exp(dS[g] / LAMBDA))));
+        }
+      }
+      processEvents(simT);
+      integrate(dt);
+      growth(dt);
+      diffuse(dt);
+      render(simT);
+
+      if (simT > nextStat) {
+        nextStat = simT + 0.5;
+        let ltp = 0;
+        for (let s = 0; s < nSyn; s++) {
+          if (sW[s] > W0) { sW[s] -= (sW[s] - W0) * 0.5 / 180; sLvl[s] = level(sW[s]); }
+          if (sLvl[s] >= 2) ltp++;
+        }
+        apWindow.push(apCount);
+        apCount = 0;
+        if (apWindow.length > 4) apWindow.shift();
+        const rate = apWindow.reduce((a, b) => a + b, 0) / (apWindow.length * 0.5);
+        const clock = new Date().toLocaleTimeString('en-GB');
+        stats.innerHTML = `<span class="wide">ap/s ${rate.toFixed(1)} · syn ${nSyn} · </span>ltp <span class="gold">${ltp}</span> · ${clock}`;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    let resizeTimer = 0;
+    addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(build, 200);
+    });
+
+    build();
+    requestAnimationFrame(frame);
+  })();
+  </script>
 </body>
 </html>
